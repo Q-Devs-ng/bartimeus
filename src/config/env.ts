@@ -1,7 +1,8 @@
 import { AppEnvironment } from '@src/internals/env';
-import { IsEnum, IsNotEmpty, IsNumber } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
+import { IsEnum, IsNotEmpty, IsNumber, validateSync } from 'class-validator';
 
-export class Env {
+export class EnvironmentVariables {
   @IsNotEmpty()
   @IsEnum(() => AppEnvironment)
   NODE_ENV: AppEnvironment;
@@ -27,4 +28,18 @@ export class Env {
 
   @IsNotEmpty()
   SESSION_TTL = 30000;
+}
+
+export function validate(config: Record<string, unknown>) {
+  const validatedConfig = plainToInstance(EnvironmentVariables, config, {
+    enableImplicitConversion: true,
+  });
+  const errors = validateSync(validatedConfig, {
+    skipMissingProperties: false,
+  });
+
+  if (errors.length > 0) {
+    throw new Error(errors.toString());
+  }
+  return validatedConfig;
 }
